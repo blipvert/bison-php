@@ -25,7 +25,7 @@
 int   FLEX_PREFIX (get_lineno) (void);
 FILE *FLEX_PREFIX (get_in) (void);
 FILE *FLEX_PREFIX (get_out) (void);
-int   FLEX_PREFIX (get_leng) (void);
+size_t   FLEX_PREFIX (get_leng) (void);
 char *FLEX_PREFIX (get_text) (void);
 void  FLEX_PREFIX (set_lineno) (int);
 void  FLEX_PREFIX (set_in) (FILE *);
