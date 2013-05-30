@@ -45,6 +45,8 @@
 
 static struct obstack format_obstack;
 
+static uniqstr *type_names = NULL;
+static int type_count = 0;
 
 /*-------------------------------------------------------------------.
 | Create a function NAME which associates to the muscle NAME the     |
@@ -132,6 +134,17 @@ escaped_output (FILE *out, char const *string)
   fprintf (out, "]]");
 }
 
+static int
+get_type_num_by_name(uniqstr name)
+{
+  int i;
+
+  for (i = 0; i < type_count; ++i) {
+    if (type_names[i] == name)
+      return i;
+  }
+  return -1;
+}
 
 /*------------------------------------------------------------------.
 | Prepare the muscles related to the symbols: translate, tname, and |
@@ -203,7 +216,6 @@ prepare_symbols (void)
     free (values);
   }
 }
-
 
 /*----------------------------------------------------------------.
 | Prepare the muscles related to the rules: r1, r2, rline, dprec, |
@@ -328,6 +340,21 @@ type_names_output (FILE *out)
   free (syms);
 }
 
+static void
+type_names_list (FILE *out)
+{
+  int i;
+
+  fputs("m4_define([b4_type_list], [", out);
+  for (i = 1; i < type_count; ++i)
+  {
+    if (i > 1)
+      fputs(", ", out);
+    fprintf( out, "[%d, [%s]]", i, type_names[i]);
+  }
+  fputs("])\n\n", out);
+}
+
 
 /*-------------------------------------.
 | The list of all the symbol numbers.  |
@@ -389,6 +416,36 @@ merger_output (FILE *out)
   fputs ("]])\n\n", out);
 }
 
+static void
+prepare_type_names (void)
+{
+  int i;
+  symbol **syms = symbols_by_type_name ();
+  uniqstr type_name = 0;
+  int ntypes = 1;
+
+  for (i = 0; i < nsyms; ++i)
+    {
+      if (syms[i]->type_name && (syms[i]->type_name != type_name)) {
+        type_name = syms[i]->type_name;
+        ++ntypes;
+      }
+    }
+
+  type_count = 0;
+  type_names = xmalloc(sizeof(*type_names)*ntypes);
+  type_names[type_count++] = type_name = 0;
+
+  for (i = 0; i < nsyms; ++i)
+    {
+      if (syms[i]->type_name && (syms[i]->type_name != type_name)) {
+        type_names[type_count++] = type_name = syms[i]->type_name;
+      }
+    }
+
+  free (syms);
+}
+
 
 /*---------------------------------------------.
 | Prepare the muscles for symbol definitions.  |
@@ -397,7 +454,11 @@ merger_output (FILE *out)
 static void
 prepare_symbol_definitions (void)
 {
-  int i;
+  int i, j, ntypes = 0;
+  uniqstr *tn = calloc(nsyms, sizeof(uniqstr));
+
+  
+  
   for (i = 0; i < nsyms; ++i)
     {
       symbol *sym = symbols[i];
@@ -433,7 +494,7 @@ prepare_symbol_definitions (void)
       MUSCLE_INSERT_INT (key, sym->number);
 
       SET_KEY("has_type");
-      MUSCLE_INSERT_INT (key, !!sym->type_name);
+      MUSCLE_INSERT_INT (key, get_type_num_by_name(sym->type_name));
 
       SET_KEY("type");
       MUSCLE_INSERT_STRING (key, sym->type_name ? sym->type_name : "");
@@ -559,6 +620,7 @@ muscles_output (FILE *out)
   symbol_numbers_output (out);
   token_definitions_output (out);
   type_names_output (out);
+  type_names_list (out);
   user_actions_output (out);
   // Must be last.
   muscles_m4_output (out);
@@ -747,6 +809,7 @@ output (void)
   obstack_init (&format_obstack);
 
   prepare_symbols ();
+  prepare_type_names ();
   prepare_rules ();
   prepare_states ();
   prepare_actions ();
@@ -758,6 +821,11 @@ output (void)
   output_skeleton ();
 
   obstack_free (&format_obstack, NULL);
+  if (type_names) {
+    free(type_names);
+    type_names = 0;
+    type_count = 0;
+  }
 }
 
 char const *
