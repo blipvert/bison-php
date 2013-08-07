@@ -21,11 +21,15 @@
 # error "FLEX_PREFIX not defined"
 #endif
 
+#ifndef YY_SIZE_T
+# define YY_SIZE_T size_t
+#endif
+
 /* Pacify "gcc -Wmissing-prototypes" when flex 2.5.31 is used.  */
 int   FLEX_PREFIX (get_lineno) (void);
 FILE *FLEX_PREFIX (get_in) (void);
 FILE *FLEX_PREFIX (get_out) (void);
-size_t   FLEX_PREFIX (get_leng) (void);
+YY_SIZE_T FLEX_PREFIX (get_leng) (void);
 char *FLEX_PREFIX (get_text) (void);
 void  FLEX_PREFIX (set_lineno) (int);
 void  FLEX_PREFIX (set_in) (FILE *);
