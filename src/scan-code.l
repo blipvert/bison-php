@@ -758,7 +758,7 @@ handle_action_dollar (symbol_list *rule, char *text, location dollar_loc)
 
       if (!type_name)
         {
-          if (union_seen | tag_seen)
+          if ((union_seen | tag_seen) && !STREQ (language->language, "php"))
             {
               if (rule->midrule_parent_rule)
                 complain_at (dollar_loc,
@@ -788,7 +788,7 @@ handle_action_dollar (symbol_list *rule, char *text, location dollar_loc)
           symbol_list_n_type_name_get (effective_rule, dollar_loc, n);
       if (!type_name)
         {
-          if (union_seen | tag_seen)
+          if ((union_seen | tag_seen) && !STREQ (language->language, "php"))
             complain_at (dollar_loc, _("$%s of %s has no declared type"),
                          cp, quote (effective_rule->content.sym->tag));
           else
