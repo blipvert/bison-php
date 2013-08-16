@@ -758,16 +758,18 @@ handle_action_dollar (symbol_list *rule, char *text, location dollar_loc)
 
       if (!type_name)
         {
-          if ((union_seen | tag_seen) && !STREQ (language->language, "php"))
+          if (union_seen | tag_seen)
             {
               if (rule->midrule_parent_rule)
-                complain_at (dollar_loc,
+                complain_or_warn_at (!STREQ (language->language, "php"),
+                             dollar_loc,
                              _("$$ for the midrule at $%d of %s"
                                " has no declared type"),
                              rule->midrule_parent_rhs_index,
                              quote (effective_rule->content.sym->tag));
               else
-                complain_at (dollar_loc, _("$$ of %s has no declared type"),
+                complain_or_warn_at (!STREQ (language->language, "php"),
+                             dollar_loc, _("$$ of %s has no declared type"),
                              quote (rule->content.sym->tag));
             }
           else
@@ -788,8 +790,9 @@ handle_action_dollar (symbol_list *rule, char *text, location dollar_loc)
           symbol_list_n_type_name_get (effective_rule, dollar_loc, n);
       if (!type_name)
         {
-          if ((union_seen | tag_seen) && !STREQ (language->language, "php"))
-            complain_at (dollar_loc, _("$%s of %s has no declared type"),
+          if (union_seen | tag_seen)
+            complain_or_warn_at (!STREQ (language->language, "php"),
+                         dollar_loc, _("$%s of %s has no declared type"),
                          cp, quote (effective_rule->content.sym->tag));
           else
             untyped_var_seen = true;
