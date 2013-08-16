@@ -164,6 +164,20 @@ complain (const char *message, ...)
   complaint_issued = true;
 }
 
+void
+complain_or_warn_at (int cmpln, location loc, const char *message, ...)
+{
+  if (cmpln)
+    {
+      ERROR_MESSAGE (&loc, NULL, message);
+      complaint_issued = true;
+    }
+  else if (warnings_flag & warnings_other)
+    {
+      set_warning_issued ();
+      ERROR_MESSAGE (&loc, _("warning"), message);
+    }
+}
 
 /*--------------------------------------------------------------.
 | An incompatibility with POSIX Yacc: mapped either to warn* or |

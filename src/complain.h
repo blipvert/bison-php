@@ -63,6 +63,9 @@ void complain_at_indent (location loc, unsigned *indent,
                          char const *format, ...)
   __attribute__ ((__format__ (__printf__, 3, 4)));
 
+void complain_or_warn_at (int cmpln, location loc, char const *format, ...)
+  __attribute__ ((__format__ (__printf__, 3, 4)));
+
 /** An incompatibility with POSIX Yacc: mapped either to warn* or
     complain* depending on yacc_flag. */
 
