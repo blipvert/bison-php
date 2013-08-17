@@ -469,11 +469,7 @@ merger_output (FILE *out)
 static void
 prepare_symbol_definitions (void)
 {
-  int i, j, ntypes = 0;
-  uniqstr *tn = calloc(nsyms, sizeof(uniqstr));
-
-  
-  
+  int i;
   for (i = 0; i < nsyms; ++i)
     {
       symbol *sym = symbols[i];
