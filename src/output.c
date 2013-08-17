@@ -48,6 +48,7 @@ static struct obstack format_obstack;
 static uniqstr *type_names = NULL;
 static int type_count = 0;
 
+
 /*-------------------------------------------------------------------.
 | Create a function NAME which associates to the muscle NAME the     |
 | result of formatting the FIRST and then TABLE_DATA[BEGIN..END[ (of |
@@ -243,6 +244,7 @@ prepare_type_names (void)
   free (syms);
 }
 
+
 /*------------------------------------------------------------------.
 | Prepare the muscles related to the symbols: translate, tname, and |
 | toknum.                                                           |
@@ -327,6 +329,7 @@ prepare_symbols (void)
   }
 }
 
+
 /*----------------------------------------------------------------.
 | Prepare the muscles related to the rules: r1, r2, rline, dprec, |
 | merger, immediate.                                              |
@@ -396,7 +399,6 @@ prepare_states (void)
   MUSCLE_INSERT_INT ("final_state_number", final_state->number);
   MUSCLE_INSERT_INT ("states_number", nstates);
 }
-
 
 
 /*-------------------------------------.
