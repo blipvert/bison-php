@@ -48,8 +48,6 @@ static struct obstack format_obstack;
 static uniqstr *type_names = NULL;
 static int type_count = 0;
 
-static void prepare_type_names (void);
-
 /*-------------------------------------------------------------------.
 | Create a function NAME which associates to the muscle NAME the     |
 | result of formatting the FIRST and then TABLE_DATA[BEGIN..END[ (of |
@@ -146,6 +144,103 @@ get_type_num_by_name(uniqstr name)
       return i;
   }
   return -1;
+}
+
+/*-------------------------------------------------------.
+| Compare two symbols by type-name, and then by number.  |
+`-------------------------------------------------------*/
+
+static int
+symbol_type_name_cmp (const symbol **lhs, const symbol **rhs)
+{
+  int res = UNIQSTR_CMP((*lhs)->type_name, (*rhs)->type_name);
+  if (res)
+    return res;
+  return (*lhs)->number - (*rhs)->number;
+}
+
+
+/*----------------------------------------------------------------.
+| Return a (malloc'ed) table of the symbols sorted by type-name.  |
+`----------------------------------------------------------------*/
+
+static symbol **
+symbols_by_type_name (void)
+{
+  typedef int (*qcmp_type) (const void *, const void *);
+  symbol **res = xmemdup (symbols, nsyms * sizeof *res);
+  qsort (res, nsyms, sizeof *res, (qcmp_type) &symbol_type_name_cmp);
+  return res;
+}
+
+
+/*------------------------------------------------------------------.
+| Define b4_type_names, which is a list of (lists of the numbers of |
+| symbols with same type-name).                                     |
+`------------------------------------------------------------------*/
+
+static void
+type_names_output (FILE *out)
+{
+  int i;
+  symbol **syms = symbols_by_type_name ();
+  fputs ("m4_define([b4_type_names],\n[", out);
+  for (i = 0; i < nsyms; /* nothing */)
+    {
+      // The index of the first symbol of the current type-name.
+      int i0 = i;
+      fputs (i ? ",\n[" : "[", out);
+      for (; i < nsyms && syms[i]->type_name == syms[i0]->type_name; ++i)
+        fprintf (out, "%s%d", i != i0 ? ", " : "", syms[i]->number);
+      fputs ("]", out);
+    }
+  fputs ("])\n\n", out);
+  free (syms);
+}
+
+static void
+type_names_list (FILE *out)
+{
+  int i;
+
+  fputs("m4_define([b4_type_list], [", out);
+  for (i = 1; i < type_count; ++i)
+  {
+    if (i > 1)
+      fputs(", ", out);
+    fprintf( out, "[%d, [%s]]", i, type_names[i]);
+  }
+  fputs("])\n\n", out);
+}
+
+static void
+prepare_type_names (void)
+{
+  int i;
+  symbol **syms = symbols_by_type_name ();
+  uniqstr type_name = 0;
+  int ntypes = 1;
+
+  for (i = 0; i < nsyms; ++i)
+    {
+      if (syms[i]->type_name && (syms[i]->type_name != type_name)) {
+        type_name = syms[i]->type_name;
+        ++ntypes;
+      }
+    }
+
+  type_count = 0;
+  type_names = xmalloc(sizeof(*type_names)*ntypes);
+  type_names[type_count++] = type_name = 0;
+
+  for (i = 0; i < nsyms; ++i)
+    {
+      if (syms[i]->type_name && (syms[i]->type_name != type_name)) {
+        type_names[type_count++] = type_name = syms[i]->type_name;
+      }
+    }
+
+  free (syms);
 }
 
 /*------------------------------------------------------------------.
@@ -303,73 +398,6 @@ prepare_states (void)
 }
 
 
-/*-------------------------------------------------------.
-| Compare two symbols by type-name, and then by number.  |
-`-------------------------------------------------------*/
-
-static int
-symbol_type_name_cmp (const symbol **lhs, const symbol **rhs)
-{
-  int res = UNIQSTR_CMP((*lhs)->type_name, (*rhs)->type_name);
-  if (res)
-    return res;
-  return (*lhs)->number - (*rhs)->number;
-}
-
-
-/*----------------------------------------------------------------.
-| Return a (malloc'ed) table of the symbols sorted by type-name.  |
-`----------------------------------------------------------------*/
-
-static symbol **
-symbols_by_type_name (void)
-{
-  typedef int (*qcmp_type) (const void *, const void *);
-  symbol **res = xmemdup (symbols, nsyms * sizeof *res);
-  qsort (res, nsyms, sizeof *res, (qcmp_type) &symbol_type_name_cmp);
-  return res;
-}
-
-
-/*------------------------------------------------------------------.
-| Define b4_type_names, which is a list of (lists of the numbers of |
-| symbols with same type-name).                                     |
-`------------------------------------------------------------------*/
-
-static void
-type_names_output (FILE *out)
-{
-  int i;
-  symbol **syms = symbols_by_type_name ();
-  fputs ("m4_define([b4_type_names],\n[", out);
-  for (i = 0; i < nsyms; /* nothing */)
-    {
-      // The index of the first symbol of the current type-name.
-      int i0 = i;
-      fputs (i ? ",\n[" : "[", out);
-      for (; i < nsyms && syms[i]->type_name == syms[i0]->type_name; ++i)
-        fprintf (out, "%s%d", i != i0 ? ", " : "", syms[i]->number);
-      fputs ("]", out);
-    }
-  fputs ("])\n\n", out);
-  free (syms);
-}
-
-static void
-type_names_list (FILE *out)
-{
-  int i;
-
-  fputs("m4_define([b4_type_list], [", out);
-  for (i = 1; i < type_count; ++i)
-  {
-    if (i > 1)
-      fputs(", ", out);
-    fprintf( out, "[%d, [%s]]", i, type_names[i]);
-  }
-  fputs("])\n\n", out);
-}
-
 
 /*-------------------------------------.
 | The list of all the symbol numbers.  |
@@ -429,36 +457,6 @@ merger_output (FILE *out)
                  n, p->type, p->name);
     }
   fputs ("]])\n\n", out);
-}
-
-static void
-prepare_type_names (void)
-{
-  int i;
-  symbol **syms = symbols_by_type_name ();
-  uniqstr type_name = 0;
-  int ntypes = 1;
-
-  for (i = 0; i < nsyms; ++i)
-    {
-      if (syms[i]->type_name && (syms[i]->type_name != type_name)) {
-        type_name = syms[i]->type_name;
-        ++ntypes;
-      }
-    }
-
-  type_count = 0;
-  type_names = xmalloc(sizeof(*type_names)*ntypes);
-  type_names[type_count++] = type_name = 0;
-
-  for (i = 0; i < nsyms; ++i)
-    {
-      if (syms[i]->type_name && (syms[i]->type_name != type_name)) {
-        type_names[type_count++] = type_name = syms[i]->type_name;
-      }
-    }
-
-  free (syms);
 }
 
 
