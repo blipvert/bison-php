@@ -48,6 +48,8 @@ static struct obstack format_obstack;
 static uniqstr *type_names = NULL;
 static int type_count = 0;
 
+static void prepare_type_names (void);
+
 /*-------------------------------------------------------------------.
 | Create a function NAME which associates to the muscle NAME the     |
 | result of formatting the FIRST and then TABLE_DATA[BEGIN..END[ (of |
@@ -213,6 +215,19 @@ prepare_symbols (void)
       values[i] = symbols[i]->user_token_number;
     muscle_insert_int_table ("toknum", values,
                              values[0], 1, ntokens);
+    free (values);
+  }
+
+  prepare_type_names();
+  
+  {
+    int i;
+    int *values = xnmalloc (nsyms, sizeof *values);
+    
+    for (i = 0; i < nsyms; ++i)
+      values[i] = get_type_num_by_name(symbols[i]->type_name);
+    muscle_insert_int_table ("ttype", values,
+                             values[0], 1, nsyms);
     free (values);
   }
 }
@@ -809,7 +824,6 @@ output (void)
   obstack_init (&format_obstack);
 
   prepare_symbols ();
-  prepare_type_names ();
   prepare_rules ();
   prepare_states ();
   prepare_actions ();
